@@ -1,0 +1,54 @@
+version: "3.11"
+
+services:
+  postgres:
+    image: postgres:14-bullseye
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: pugpe
+      POSTGRES_PASSWORD: pugpe
+      POSTGRES_DB: pugpe
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "pugpe", "-d", "pugpe"]
+      interval: 1s
+
+  redis:
+    image: redis:7-bullseye
+    ports:
+      - "6379:6379"
+    healthcheck:
+     test: ["CMD", "redis-cli","ping"]
+     interval: 1s
+
+  web:
+    build: .
+    image: pugpe:web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://pugpe:pugpe@postgres:5432/pugpe
+      DJANGO_READ_DOT_ENV_FILE: "True"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+  worker:
+    image: pugpe:web
+    command: celery -A pugpe worker --beat -l INFO
+    volumes:
+      - .:/code
+    environment:
+      DATABASE_URL: postgresql://pugpe:pugpe@postgres:5432/pugpe
+      DJANGO_READ_DOT_ENV_FILE: "True"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy

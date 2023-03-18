@@ -30,7 +30,10 @@ default:
 	mkdir -p .state && touch .state/db-initialized
 
 serve: .state/db-initialized
-	docker-compose up --remove-orphans
+	docker-compose up --remove-orphans -d
+
+stop: .state/db-initialized
+	docker-compose down
 
 shell: .state/db-initialized
 	docker-compose run --rm web /bin/bash

@@ -1,7 +1,6 @@
 import os
 
 from celery import Celery
-from django.core import management
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pugpe.settings")
 
